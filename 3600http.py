@@ -9,8 +9,6 @@ import sys
 import threading
 import argparse
 
-#DERP, I AM TESTING SOMETHING...
-
 class Header:
 	def __init__(self, date, server, connection, contentLength, contentType):
 		self.date = date
