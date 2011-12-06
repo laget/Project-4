@@ -68,11 +68,11 @@ def main (directory, port=8080):
                         file = fd.read()
                         client_socket.sendall(file)
 
-                        okmsg = "HTTP/1.0 200 OK\r\n"
-                        now = datetime.datetime.now()
-                        server = "Vår http-server 1.0\r\n"
-                        connection = "close\r\n"
-                        content_length = len(file)
+                        # okmsg = "HTTP/1.0 200 OK\r\n"
+                        # now = datetime.datetime.now()
+                        # server = "Vår http-server 1.0\r\n"
+                        # connection = "close\r\n"
+                        # content_length = len(file)
 
 
 
