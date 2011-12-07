@@ -1,3 +1,4 @@
+# -*- coding: latin-1 -*-
 # Team Laget
 # Scott Surette
 # Zane Whitney
@@ -6,8 +7,9 @@
 import os
 import socket
 import sys
-import threading
+import thread
 import datetime
+import mimetypes
 
 class Header:
 	def __init__(self, date, server, connection, contentLength, contentType):
@@ -22,73 +24,94 @@ class Response:
 		self.Header = Header
 		self.data = data
 
+def buildpath(socket, basedir):
+        """Builds a directory path to a file from an HTTP request."""
+
+        request = str(socket.recv(4096))
+        print "Request recieved: " + request
+
+        reqlist = request.split()
+        print "Request in list form: " + str(reqlist)
+        print "Length of reqlist: " +  str(len(reqlist))
+
+        if (len(reqlist) > 1):
+                endpath = reqlist[1]
+                print (endpath)
+
+		abspath = basedir + str(endpath)
+		print "Full path constructed: " + str(abspath)
+
+                return abspath
+
+
+
+def servicerequest(path, socket):
+        """Services an HTTP request based on the provided file path"""
+
+        if (os.path.exists(path)):
+                fd = open(path, "r")
+                file = fd.read()
+                socket.sendall(file)
+
+                okmsg = "HTTP/1.0 200 OK\r\n"
+                now = datetime.datetime.now()
+
+                datestr = now.strftime("%a, %d %B %G %H:%M:%S %Z")
+
+                print "Formatted date and time: " + datestr
+
+                server = "Server: Vår http-server 1.0\r\n"
+                connection = "Connection: close\r\n"
+                content_length = sys.getsizeof(file)
+                content_type = mimetypes.guess_type(path)[0]
+
+                httpresponse = str(okmsg) + datestr
+
+                print "Content Type Header: " + content_type
+                print "Size of file in bytes: " + str(content_length)
+
+        # header = Header();
+        else:
+                socket.sendall(b"HTTP/1.0 404 Not Found")
+
+                # when returning the requested file:
+                # print "HTTP/1.0 200 OK"
+                # Header.date = currentDate
+                # Header.server = serverName
+                # Header.connection = close
+                # Header.contentLength = numberOfBytesInContent
+                # Header.contentType = header for mime type - see above and notes.txt
+                # return Header, return requested file
+
+                return None
 
 def main (directory, port=8080):
-	# main definition here
 
+        # Building socket
 	server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	server_socket.bind(("", port))
 
-	print ("Waiting for requests on port", port)
+	print "Waiting for requests on port " + str(port)
 
 	while 1:
 		server_socket.listen(5)
 		client_socket, address = server_socket.accept()
 
-		print ("Client socket:", client_socket)
-		print ("Address:", address)
+		print "Client socket: " + str(client_socket)
+		print "Address: " + str(address)
 
-		print ("id CONNECT") # note - need to assign id
-
-		request = str(client_socket.recv(4096))
-		print ("Request:", request)
-
-		print ("id REQUEST") # note - need to assign id
+		print "id CONNECT" # note - need to assign id
+		print "id REQUEST" # note - need to assign id
 
 		# need to check here if requested page can be found:
 		# check mime type - see notes.txt - need to check file extension
 		# if it can be found, print "id DELIVERED" and return requested file
 		# if it can't be found, print "HTTP/1.0 404 Not Found"
 
-		rlist = request.split()
-		print (rlist)
-		print (len(rlist))
+                searchpath = buildpath(client_socket, directory)
 
-		if (len(rlist) > 1):
-			path = rlist[1]
-			print (path)
-
-		abspath = directory + str(path)
-
-		print (abspath)
-
-		if (os.path.exists(abspath)):
-			fd = open(abspath, "r")
-                        file = fd.read()
-                        client_socket.sendall(file)
-
-                        # okmsg = "HTTP/1.0 200 OK\r\n"
-                        # now = datetime.datetime.now()
-                        # server = "VÃ¥r http-server 1.0\r\n"
-                        # connection = "close\r\n"
-                        # content_length = len(file)
-
-
-
-                        header = Header();
-		else:
-			client_socket.sendall(b"HTTP/1.0 404 Not Found")
-
-
-		# when returning the requested file:
-		# print "HTTP/1.0 200 OK"
-		# Header.date = currentDate
-		# Header.server = serverName
-		# Header.connection = close
-		# Header.contentLength = numberOfBytesInContent
-		# Header.contentType = header for mime type - see above and notes.txt
-		# return Header, return requested file
+                servicerequest(searchpath, client_socket)
 
 
 
