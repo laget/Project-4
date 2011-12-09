@@ -3,12 +3,17 @@
 # Zane Whitney
 # Rani Aljondi
 
-import os, socket, sys, thread, datetime, mimetypes
+import os
+import socket
+import sys
+import thread
+import datetime
+import mimetypes
 
-def buildpath(socket, basedir):
+def buildpath(socket, basedir, httpid):
     """Builds a directory path to a file from an HTTP request."""
     request = socket.recv(4096)
-    print "id REQUEST" # note - need to assign id
+    print str(httpid) + " REQUEST"
     print "Request recieved: " + request
 
     reqlist = request.split()
@@ -24,11 +29,11 @@ def buildpath(socket, basedir):
 
     return abspath
 
-def servicerequest(path, socket):
+def servicerequest(path, socket, httpid):
     """Services an HTTP request based on the provided file path"""
 
     if (os.path.exists(path)):
-        print "id DELIVERED" # note - need to assign id
+        print str(httpid) + " DELIVERED"
         fd = open(path, "r")
         file = fd.read()
 
@@ -50,12 +55,18 @@ def servicerequest(path, socket):
         header = datestr + server + connection + content_length + content_type
 
         socket.sendall(okmsg + header + file)
+        socket.close()
     else:
+        print str(httpid) + " NOTFOUND"
         socket.sendall("HTTP/1.0 404 Not Found\r\n")
+        socket.close()
+        print str(httpid) + " CLOSE"
 
     return None
 
 def main (directory, port=8080):
+
+    httpid = 0
 
     # Building socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -68,14 +79,15 @@ def main (directory, port=8080):
         server_socket.listen(5)
         client_socket, address = server_socket.accept()
 
-        print "id CONNECT" # note - need to assign id
+        httpid += 1
+        print str(httpid) + " CONNECT"
 
         print "Client socket: " + str(client_socket)
         print "Address: " + str(address)
 
-        searchpath = buildpath(client_socket, directory)
+        searchpath = buildpath(client_socket, directory, httpid)
 
-        thread.start_new_thread(servicerequest, (searchpath, client_socket))
+        thread.start_new_thread(servicerequest, (searchpath, client_socket, httpid))
 
 
 
