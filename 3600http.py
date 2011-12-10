@@ -21,11 +21,19 @@ def buildpath(socket, basedir, httpid):
     print "Length of reqlist: " +  str(len(reqlist))
 
     if (len(reqlist) > 1):
-        endpath = reqlist[1]
-        print (endpath)
-
-    abspath = basedir + str(endpath)
-    print "Full path constructed: " + str(abspath)
+        if (reqlist[0] == "GET"):
+            endpath = reqlist[1]
+            abspath = basedir + str(endpath)
+            print "Full path constructed: " + str(abspath)
+            print (endpath)
+        else:
+            socket.sendall("HTTP/1.0 400 Bad Request\r\n")
+            socket.close
+            abspath = None
+    else:
+        socket.sendall("HTTP/1.0 400 Bad Request\r\n")
+        socket.close
+        abspath = None
 
     return abspath
 
@@ -76,6 +84,7 @@ def main (directory, port=8080):
     print "Waiting for requests on port " + str(port)
 
     while 1:
+        print "going..."
         server_socket.listen(5)
         client_socket, address = server_socket.accept()
 
@@ -86,8 +95,11 @@ def main (directory, port=8080):
         print "Address: " + str(address)
 
         searchpath = buildpath(client_socket, directory, httpid)
-
-        thread.start_new_thread(servicerequest, (searchpath, client_socket, httpid))
+        if (searchpath == None):
+            print str(httpid) + " ERROR"
+            server_socket.close
+        else:
+            thread.start_new_thread(servicerequest, (searchpath, client_socket, httpid))
 
 
 
